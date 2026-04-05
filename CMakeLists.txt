@@ -15,6 +15,8 @@ add_executable(FeatureDetectionApp
     main.cpp
     mainwindow.cpp
     mainwindow.h
+    harris.cpp
+    harris.h
     utils.cpp
     utils.h
 )
