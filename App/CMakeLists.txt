@@ -4,6 +4,10 @@ project(FeatureDetectionApp VERSION 1.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Force extreme GCC compiler optimizations for image processing math
+set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Compile with Release optimizations" FORCE)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math -mavx2")
+
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
@@ -17,6 +21,8 @@ add_executable(FeatureDetectionApp
     mainwindow.h
     harris.cpp
     harris.h
+    sift.cpp
+    sift.h
     utils.cpp
     utils.h
 )

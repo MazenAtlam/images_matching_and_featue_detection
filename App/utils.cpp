@@ -60,34 +60,71 @@ namespace utils {
         return output;
     }
 
-    Matrix2D getGaussianKernel(double sigma) {
+    std::vector<double> get1DGaussianKernel(double sigma) {
         if (sigma <= 0.0) sigma = 0.0001;
-        // typically size is 2 * ceil(3 * sigma) + 1
         int hc = std::ceil(3.0 * sigma);
         int size = 2 * hc + 1;
-        Matrix2D kernel(size, size);
+        std::vector<double> kernel(size);
         double sum = 0.0;
 
-        for (int y = -hc; y <= hc; ++y) {
-            for (int x = -hc; x <= hc; ++x) {
-                double val = std::exp(-(x * x + y * y) / (2.0 * sigma * sigma)) / (2.0 * M_PI * sigma * sigma);
-                kernel.at(y + hc, x + hc) = val;
-                sum += val;
-            }
+        for (int x = -hc; x <= hc; ++x) {
+            double val = std::exp(-(x * x) / (2.0 * sigma * sigma));
+            kernel[x + hc] = val;
+            sum += val;
         }
         // Normalize
-        for (int y = 0; y < size; ++y) {
-            for (int x = 0; x < size; ++x) {
-                kernel.at(y, x) /= sum;
-            }
-        }
+        for (int i = 0; i < size; ++i) kernel[i] /= sum;
+        
         return kernel;
     }
 
     Matrix2D applyGaussianBlur(const Matrix2D& input, double sigma) {
         if (sigma <= 0.0) return input;
-        Matrix2D kernel = getGaussianKernel(sigma);
-        return convolve2D(input, kernel);
+        
+        // Using separable 1D Gaussian kernels for exponential speedup
+        // O(W * H * 2K) instead of O(W * H * K^2)
+        std::vector<double> kernel = get1DGaussianKernel(sigma);
+        int kSize = kernel.size();
+        int pad = kSize / 2;
+        
+        int rows = input.rows;
+        int cols = input.cols;
+
+        // Pass 1: Horizontal Blur
+        Matrix2D temp(rows, cols, 0.0);
+        for (int y = 0; y < rows; ++y) {
+            for (int x = 0; x < cols; ++x) {
+                double sum = 0.0;
+                for (int kx = -pad; kx <= pad; ++kx) {
+                    int px = x + kx;
+                    // Edge clamping
+                    if (px < 0) px = 0;
+                    if (px >= cols) px = cols - 1;
+                    
+                    sum += input.at(y, px) * kernel[kx + pad];
+                }
+                temp.at(y, x) = sum;
+            }
+        }
+
+        // Pass 2: Vertical Blur
+        Matrix2D output(rows, cols, 0.0);
+        for (int y = 0; y < rows; ++y) {
+            for (int x = 0; x < cols; ++x) {
+                double sum = 0.0;
+                for (int ky = -pad; ky <= pad; ++ky) {
+                    int py = y + ky;
+                    // Edge clamping
+                    if (py < 0) py = 0;
+                    if (py >= rows) py = rows - 1;
+                    
+                    sum += temp.at(py, x) * kernel[ky + pad];
+                }
+                output.at(y, x) = sum;
+            }
+        }
+        
+        return output;
     }
 
     void computeGradients(const Matrix2D& input, Matrix2D& Ix, Matrix2D& Iy) {

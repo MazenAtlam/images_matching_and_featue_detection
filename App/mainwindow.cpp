@@ -1,11 +1,15 @@
 #include "mainwindow.h"
 #include "harris.h"
+#include "sift.h"
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QGridLayout>
 #include <QFileDialog>
 #include <QSplitter>
 #include <QElapsedTimer>
+#include <QApplication>
+#include <QGraphicsTextItem>
+#include <QGraphicsEllipseItem>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -174,6 +178,7 @@ void MainWindow::logMessage(const QString& msg) {
 
 void MainWindow::displayImage(QGraphicsScene* scene, const QImage& img) {
     scene->clear();
+    scene->setBackgroundBrush(Qt::NoBrush);
     scene->addPixmap(QPixmap::fromImage(img));
     if (!scene->views().isEmpty()) {
         scene->views().first()->fitInView(scene->itemsBoundingRect(), Qt::KeepAspectRatio);
@@ -198,13 +203,33 @@ void MainWindow::uploadImageB() {
     }
 }
 
+void MainWindow::showLoader(const QString& taskName) {
+    logMessage("> " + taskName + "...");
+    logMessage("   Loading...");
+    
+    sceneOutput->clear();
+    sceneOutput->setBackgroundBrush(Qt::darkGray);
+    
+    QGraphicsEllipseItem* circle = sceneOutput->addEllipse(0, 0, 100, 100, QPen(Qt::green, 4));
+    QGraphicsTextItem* text = sceneOutput->addText("Working...");
+    text->setDefaultTextColor(Qt::white);
+    text->setPos(15, 38);
+    
+    if (!sceneOutput->views().isEmpty()) {
+        sceneOutput->views().first()->resetTransform();
+        sceneOutput->views().first()->centerOn(50, 50);
+    }
+    
+    QApplication::processEvents();
+}
+
 void MainWindow::applyHarris() {
     if (imgA.isNull()) {
         logMessage("[Error] Please upload Image A first.");
         return;
     }
 
-    logMessage("> Running Harris Corner Detection...");
+    showLoader("Running Harris Corner Detection");
     QElapsedTimer timer; timer.start();
 
     // 1. Get parameters
@@ -227,15 +252,39 @@ void MainWindow::applyHarris() {
 }
 
 void MainWindow::applySIFT() {
-    logMessage("> Running SIFT Feature Extractor (Dummy)");
+    if (imgA.isNull()) {
+        logMessage("[Error] Please upload Image A first.");
+        return;
+    }
+
+    showLoader("Running SIFT Feature Extraction");
     QElapsedTimer timer; timer.start();
-    // TODO: Connect to sift.cpp
-    logMessage(QString("   Time taken: %1 ms").arg(timer.elapsed()));
+
+    // 1. Get parameters
+    double sigma0 = siftSigmaSlider->value() / 10.0;
+    double scale = siftScaleSlider->value() / 10.0;
+    double contrast = siftContrastSlider->value() / 100.0;
+
+    // 2. Convert to matrix
+    utils::Matrix2D mat = utils::QImageToGrayMatrix(imgA);
+
+    // 3. Apply SIFT Extractor
+    std::vector<feature::SiftKeypoint> kps = feature::extractSiftFeatures(mat, sigma0, scale, contrast);
+
+    // 4. Draw result
+    QImage resultImg = feature::drawSiftKeypoints(imgA, kps);
+    displayImage(sceneOutput, resultImg);
+
+    int elapsed = timer.elapsed();
+    logMessage(QString("   Extracted %1 SIFT keypoints").arg(kps.size()));
+    logMessage(QString("   Time taken: %1 ms").arg(elapsed));
 }
 
 void MainWindow::applyMatching() {
-    logMessage("> Running Feature Matcher (Dummy)");
+    showLoader("Running Feature Matcher (Dummy)");
     QElapsedTimer timer; timer.start();
     // TODO: Connect to matching.cpp
     logMessage(QString("   Time taken: %1 ms").arg(timer.elapsed()));
+    sceneOutput->clear();
+    sceneOutput->setBackgroundBrush(Qt::NoBrush);
 }

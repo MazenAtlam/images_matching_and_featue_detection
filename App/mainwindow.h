@@ -36,6 +36,7 @@ private:
     QGroupBox* createSIFTGroup();
     QGroupBox* createMatchingGroup();
     void displayImage(QGraphicsScene* scene, const QImage& img);
+    void showLoader(const QString& taskName);
 
     // Scenes
     QGraphicsScene *sceneA, *sceneB, *sceneOutput;
