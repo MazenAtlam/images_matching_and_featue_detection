@@ -9,8 +9,40 @@
 #include <QSplitter>
 #include <QElapsedTimer>
 #include <QApplication>
-#include <QGraphicsTextItem>
-#include <QGraphicsEllipseItem>
+
+// Inject Spinner logic identically natively mimicking the specific loading aesthetic organically!
+SpinnerItem::SpinnerItem(QGraphicsItem *parent) : QGraphicsObject(parent), angle(0) {
+    timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, [this](){
+        angle = (angle + 10) % 360;
+        update();
+    });
+    timer->start(20); // Smooth 50 FPS
+}
+
+QRectF SpinnerItem::boundingRect() const {
+    return QRectF(-70, -70, 140, 140);
+}
+
+void SpinnerItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
+    painter->setRenderHint(QPainter::Antialiasing);
+    int side = 80;
+    QRectF rect(-side/2.0, -side/2.0, side, side);
+    
+    QPen pen(QColor(0, 255, 150), 6); 
+    pen.setCapStyle(Qt::RoundCap);
+    painter->setPen(pen);
+    
+    // Conic swept rotation effectively translating logic 
+    painter->drawArc(rect, -angle * 16, 270 * 16);
+
+    painter->setPen(Qt::white);
+    QFont f = painter->font();
+    f.setPixelSize(15);
+    f.setBold(true);
+    painter->setFont(f);
+    painter->drawText(QRectF(-side, side/2.0 + 15.0, side*2.0, 30.0), Qt::AlignCenter, "Loading ...");
+}
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -189,48 +221,63 @@ void MainWindow::logMessage(const QString& msg) {
 void MainWindow::displayImage(QGraphicsScene* scene, const QImage& img) {
     scene->clear();
     scene->setBackgroundBrush(Qt::NoBrush);
-    scene->addPixmap(QPixmap::fromImage(img));
+    QGraphicsPixmapItem* pixmapItem = scene->addPixmap(QPixmap::fromImage(img));
+    
+    // Critically explicitly reset structural boundary limits exactly tracking identical image geometric widths properly organically natively globally algebraically testing!
+    scene->setSceneRect(pixmapItem->boundingRect());
+    
     if (!scene->views().isEmpty()) {
+        scene->views().first()->resetTransform();
         scene->views().first()->fitInView(scene->itemsBoundingRect(), Qt::KeepAspectRatio);
+        scene->views().first()->centerOn(pixmapItem);
     }
 }
 
 void MainWindow::uploadImageA() {
     QString fileName = QFileDialog::getOpenFileName(this, "Open Image A", "", "Images (*.png *.jpg *.jpeg *.bmp *.webp)");
     if (!fileName.isEmpty()) {
-        imgA.load(fileName);
-        displayImage(sceneA, imgA);
-        logMessage("Loaded Image A: " + fileName);
+        showLoader("", sceneA); // Trigger visually loading bounds instantly specifically matching instructions
+        QTimer::singleShot(50, this, [=]() {
+            imgA.load(fileName);
+            displayImage(sceneA, imgA);
+            logMessage("Loaded Image A: " + fileName);
+        });
     }
 }
 
 void MainWindow::uploadImageB() {
     QString fileName = QFileDialog::getOpenFileName(this, "Open Image B", "", "Images (*.png *.jpg *.jpeg *.bmp *.webp)");
     if (!fileName.isEmpty()) {
-        imgB.load(fileName);
-        displayImage(sceneB, imgB);
-        logMessage("Loaded Image B: " + fileName);
+        showLoader("", sceneB); // Explicitly activating right-side spinner
+        QTimer::singleShot(50, this, [=]() {
+            imgB.load(fileName);
+            displayImage(sceneB, imgB);
+            logMessage("Loaded Image B: " + fileName);
+        });
     }
 }
 
-void MainWindow::showLoader(const QString& taskName) {
-    logMessage("> " + taskName + "...");
-    logMessage("   Loading...");
-    
-    sceneOutput->clear();
-    sceneOutput->setBackgroundBrush(Qt::darkGray);
-    
-    QGraphicsEllipseItem* circle = sceneOutput->addEllipse(0, 0, 100, 100, QPen(Qt::green, 4));
-    QGraphicsTextItem* text = sceneOutput->addText("Working...");
-    text->setDefaultTextColor(Qt::white);
-    text->setPos(15, 38);
-    
-    if (!sceneOutput->views().isEmpty()) {
-        sceneOutput->views().first()->resetTransform();
-        sceneOutput->views().first()->centerOn(50, 50);
+void MainWindow::showLoader(const QString& taskName, QGraphicsScene* targetScene) {
+    if (!taskName.isEmpty()) {
+        logMessage("> " + taskName + "...");
     }
     
-    QApplication::processEvents();
+    targetScene->clear();
+    // Native sleek aesthetics logically bridging cleanly!
+    targetScene->setBackgroundBrush(QColor(30, 30, 30));
+    
+    SpinnerItem* spinner = new SpinnerItem();
+    targetScene->addItem(spinner);
+    spinner->setPos(0, 0);
+    
+    // Critically explicitly shrink the structural scene bounds mapping strictly to the spinner natively!
+    // Without this, the scene physically remembers the old massive image boundaries logically offsetting everything.
+    targetScene->setSceneRect(spinner->boundingRect());
+    
+    if (!targetScene->views().isEmpty()) {
+        targetScene->views().first()->resetTransform();
+        targetScene->views().first()->centerOn(0, 0);
+    }
 }
 
 void MainWindow::applyHarris() {
@@ -239,26 +286,22 @@ void MainWindow::applyHarris() {
         return;
     }
 
-    showLoader("Running Harris Corner Detection");
-    QElapsedTimer timer; timer.start();
+    showLoader("Running Harris Corner Detection", sceneOutput);
 
-    // 1. Get parameters
-    double sigma = harrisSigmaSlider->value() / 10.0;
-    double threshold = harrisThresholdSlider->value();
+    QTimer::singleShot(50, this, [=]() {
+        QElapsedTimer timer; timer.start();
 
-    // 2. Convert to matrix
-    utils::Matrix2D mat = utils::QImageToGrayMatrix(imgA);
+        double sigma = harrisSigmaSlider->value() / 10.0;
+        double threshold = harrisThresholdSlider->value();
 
-    // 3. Apply Harris Algorithm
-    std::vector<feature::CornerPoint> corners = feature::detectHarrisCorners(mat, sigma, threshold);
+        utils::Matrix2D mat = utils::QImageToGrayMatrix(imgA);
+        std::vector<feature::CornerPoint> corners = feature::detectHarrisCorners(mat, sigma, threshold);
+        QImage resultImg = feature::drawCorners(imgA, corners);
 
-    // 4. Draw result
-    QImage resultImg = feature::drawCorners(imgA, corners);
-    displayImage(sceneOutput, resultImg);
-
-    int elapsed = timer.elapsed();
-    logMessage(QString("   Detected %1 corners").arg(corners.size()));
-    logMessage(QString("   Time taken: %1 ms").arg(elapsed));
+        displayImage(sceneOutput, resultImg);
+        logMessage(QString("   Detected %1 corners").arg(corners.size()));
+        logMessage(QString("   Time taken: %1 ms").arg(timer.elapsed()));
+    });
 }
 
 void MainWindow::applySIFT() {
@@ -267,27 +310,23 @@ void MainWindow::applySIFT() {
         return;
     }
 
-    showLoader("Running SIFT Feature Extraction");
-    QElapsedTimer timer; timer.start();
+    showLoader("Running SIFT Feature Extraction", sceneOutput);
 
-    // 1. Get parameters
-    double sigma0 = siftSigmaSlider->value() / 10.0;
-    int num_intervals = siftIntervalsSlider->value();
-    double contrast = siftContrastSlider->value() / 100.0;
+    QTimer::singleShot(50, this, [=]() {
+        QElapsedTimer timer; timer.start();
 
-    // 2. Convert to matrix
-    utils::Matrix2D mat = utils::QImageToGrayMatrix(imgA);
+        double sigma0 = siftSigmaSlider->value() / 10.0;
+        int num_intervals = siftIntervalsSlider->value();
+        double contrast = siftContrastSlider->value() / 100.0;
 
-    // 3. Apply SIFT Extractor
-    std::vector<feature::SiftKeypoint> kps = feature::extractSiftFeatures(mat, sigma0, num_intervals, contrast);
+        utils::Matrix2D mat = utils::QImageToGrayMatrix(imgA);
+        std::vector<feature::SiftKeypoint> kps = feature::extractSiftFeatures(mat, sigma0, num_intervals, contrast);
+        QImage resultImg = feature::drawSiftKeypoints(imgA, kps);
 
-    // 4. Draw result
-    QImage resultImg = feature::drawSiftKeypoints(imgA, kps);
-    displayImage(sceneOutput, resultImg);
-
-    int elapsed = timer.elapsed();
-    logMessage(QString("   Extracted %1 SIFT keypoints").arg(kps.size()));
-    logMessage(QString("   Time taken: %1 ms").arg(elapsed));
+        displayImage(sceneOutput, resultImg);
+        logMessage(QString("   Extracted %1 SIFT keypoints").arg(kps.size()));
+        logMessage(QString("   Time taken: %1 ms").arg(timer.elapsed()));
+    });
 }
 
 void MainWindow::applyMatchingSSD() {
@@ -304,36 +343,38 @@ void MainWindow::executeMatching(const QString& metric) {
         return;
     }
 
-    showLoader("Running Feature Matcher");
-    QElapsedTimer timer; timer.start();
-
-    double sigma0 = siftSigmaSlider->value() / 10.0;
-    int num_intervals = siftIntervalsSlider->value();
-    double contrast = siftContrastSlider->value() / 100.0;
-
-    utils::Matrix2D matA = utils::QImageToGrayMatrix(imgA);
-    utils::Matrix2D matB = utils::QImageToGrayMatrix(imgB);
-
-    logMessage("   Extracting features natively for Image A...");
-    std::vector<feature::SiftKeypoint> kpsA = feature::extractSiftFeatures(matA, sigma0, num_intervals, contrast);
+    showLoader("Running Feature Matcher", sceneOutput);
     
-    logMessage("   Extracting features natively for Image B...");
-    std::vector<feature::SiftKeypoint> kpsB = feature::extractSiftFeatures(matB, sigma0, num_intervals, contrast);
+    QTimer::singleShot(50, this, [=]() {
+        QElapsedTimer timer; timer.start();
 
-    std::vector<feature::Match> matches;
+        double sigma0 = siftSigmaSlider->value() / 10.0;
+        int num_intervals = siftIntervalsSlider->value();
+        double contrast = siftContrastSlider->value() / 100.0;
 
-    if (metric == "SSD") {
-        logMessage("   Matching matrices via SSD (Ratio Test)...");
-        matches = feature::matchFeaturesSSD(kpsA, kpsB, 0.8);
-    } else {
-        logMessage("   Matching matrices via NCC (Dot Product)...");
-        matches = feature::matchFeaturesNCC(kpsA, kpsB, 0.85);
-    }
+        utils::Matrix2D matA = utils::QImageToGrayMatrix(imgA);
+        utils::Matrix2D matB = utils::QImageToGrayMatrix(imgB);
 
-    QImage resultImg = feature::drawMatches(imgA, imgB, kpsA, kpsB, matches);
-    displayImage(sceneOutput, resultImg);
+        logMessage("   Extracting features natively for Image A...");
+        std::vector<feature::SiftKeypoint> kpsA = feature::extractSiftFeatures(matA, sigma0, num_intervals, contrast);
+        
+        logMessage("   Extracting features natively for Image B...");
+        std::vector<feature::SiftKeypoint> kpsB = feature::extractSiftFeatures(matB, sigma0, num_intervals, contrast);
 
-    int elapsed = timer.elapsed();
-    logMessage(QString("   Matched %1 features successfully!").arg(matches.size()));
-    logMessage(QString("   Time taken: %1 ms").arg(elapsed));
+        std::vector<feature::Match> matches;
+
+        if (metric == "SSD") {
+            logMessage("   Matching matrices via SSD (Ratio Test)...");
+            matches = feature::matchFeaturesSSD(kpsA, kpsB, 0.8);
+        } else {
+            logMessage("   Matching matrices via NCC (Dot Product)...");
+            matches = feature::matchFeaturesNCC(kpsA, kpsB, 0.85);
+        }
+
+        QImage resultImg = feature::drawMatches(imgA, imgB, kpsA, kpsB, matches);
+        displayImage(sceneOutput, resultImg);
+
+        logMessage(QString("   Matched %1 features successfully!").arg(matches.size()));
+        logMessage(QString("   Time taken: %1 ms").arg(timer.elapsed()));
+    });
 }

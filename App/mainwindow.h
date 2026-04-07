@@ -11,6 +11,20 @@
 #include <QComboBox>
 #include <QLabel>
 #include <QImage>
+#include <QGraphicsObject>
+#include <QPainter>
+#include <QTimer>
+
+class SpinnerItem : public QGraphicsObject {
+    Q_OBJECT
+public:
+    SpinnerItem(QGraphicsItem *parent = nullptr);
+    QRectF boundingRect() const override;
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) override;
+private:
+    int angle;
+    QTimer *timer;
+};
 
 class MainWindow : public QMainWindow
 {
@@ -38,7 +52,7 @@ private:
     QGroupBox* createHarrisGroup();
     QGroupBox* createSIFTMatcherGroup();
     void displayImage(QGraphicsScene* scene, const QImage& img);
-    void showLoader(const QString& taskName);
+    void showLoader(const QString& taskName, QGraphicsScene* scene);
 
     // Scenes
     QGraphicsScene *sceneA, *sceneB, *sceneOutput;
