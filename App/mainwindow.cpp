@@ -128,11 +128,11 @@ QGroupBox* MainWindow::createSIFTGroup() {
     siftSigmaSlider->setValue(16);
     connect(siftSigmaSlider, &QSlider::valueChanged, [=](int v){ siftSigmaLabel->setText(QString("Initial Sigma: %1").arg(v / 10.0)); });
 
-    siftScaleLabel = new QLabel("Scale Multiplier (s): 1.41");
-    siftScaleSlider = new QSlider(Qt::Horizontal);
-    siftScaleSlider->setRange(11, 20);
-    siftScaleSlider->setValue(14);
-    connect(siftScaleSlider, &QSlider::valueChanged, [=](int v){ siftScaleLabel->setText(QString("Scale Multiplier: %1").arg(v / 10.0)); });
+    siftIntervalsLabel = new QLabel("Intervals per Octave (s): 3");
+    siftIntervalsSlider = new QSlider(Qt::Horizontal);
+    siftIntervalsSlider->setRange(1, 10);
+    siftIntervalsSlider->setValue(3);
+    connect(siftIntervalsSlider, &QSlider::valueChanged, [=](int v){ siftIntervalsLabel->setText(QString("Intervals per Octave (s): %1").arg(v)); });
 
     siftContrastLabel = new QLabel("Contrast Threshold: 0.03");
     siftContrastSlider = new QSlider(Qt::Horizontal);
@@ -145,8 +145,8 @@ QGroupBox* MainWindow::createSIFTGroup() {
 
     layout->addWidget(siftSigmaLabel);
     layout->addWidget(siftSigmaSlider);
-    layout->addWidget(siftScaleLabel);
-    layout->addWidget(siftScaleSlider);
+    layout->addWidget(siftIntervalsLabel);
+    layout->addWidget(siftIntervalsSlider);
     layout->addWidget(siftContrastLabel);
     layout->addWidget(siftContrastSlider);
     layout->addWidget(btnApply);
@@ -262,14 +262,14 @@ void MainWindow::applySIFT() {
 
     // 1. Get parameters
     double sigma0 = siftSigmaSlider->value() / 10.0;
-    double scale = siftScaleSlider->value() / 10.0;
+    int num_intervals = siftIntervalsSlider->value();
     double contrast = siftContrastSlider->value() / 100.0;
 
     // 2. Convert to matrix
     utils::Matrix2D mat = utils::QImageToGrayMatrix(imgA);
 
     // 3. Apply SIFT Extractor
-    std::vector<feature::SiftKeypoint> kps = feature::extractSiftFeatures(mat, sigma0, scale, contrast);
+    std::vector<feature::SiftKeypoint> kps = feature::extractSiftFeatures(mat, sigma0, num_intervals, contrast);
 
     // 4. Draw result
     QImage resultImg = feature::drawSiftKeypoints(imgA, kps);

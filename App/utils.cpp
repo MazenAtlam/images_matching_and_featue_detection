@@ -127,6 +127,73 @@ namespace utils {
         return output;
     }
 
+    Matrix2D subsampleByHalf(const Matrix2D& input) {
+        int r = input.rows / 2;
+        int c = input.cols / 2;
+        Matrix2D out(r, c, 0.0);
+        for(int y = 0; y < r; ++y) {
+            for(int x = 0; x < c; ++x) {
+                out.at(y, x) = input.data[(y * 2) * input.cols + (x * 2)];
+            }
+        }
+        return out;
+    }
+
+    Matrix2D upsampleByDouble(const Matrix2D& input) {
+        int r = input.rows * 2;
+        int c = input.cols * 2;
+        Matrix2D out(r, c, 0.0);
+        
+        for(int y = 0; y < r; ++y) {
+            double src_y = y / 2.0;
+            int y1 = (int)std::floor(src_y);
+            int y2 = std::min(y1 + 1, input.rows - 1);
+            double dy = src_y - y1;
+            
+            for(int x = 0; x < c; ++x) {
+                double src_x = x / 2.0;
+                int x1 = (int)std::floor(src_x);
+                int x2 = std::min(x1 + 1, input.cols - 1);
+                double dx = src_x - x1;
+                
+                double v1 = input.data[y1 * input.cols + x1];
+                double v2 = input.data[y1 * input.cols + x2];
+                double v3 = input.data[y2 * input.cols + x1];
+                double v4 = input.data[y2 * input.cols + x2];
+                
+                double top_interp = v1 * (1.0 - dx) + v2 * dx;
+                double bot_interp = v3 * (1.0 - dx) + v4 * dx;
+                
+                out.at(y, x) = top_interp * (1.0 - dy) + bot_interp * dy;
+            }
+        }
+        return out;
+    }
+
+    bool invert3x3(const double m[3][3], double inv[3][3]) {
+        double det = m[0][0] * (m[1][1] * m[2][2] - m[2][1] * m[1][2]) -
+                     m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) +
+                     m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
+                     
+        if (std::abs(det) < 1e-8) return false; // Matrix is singular mathematically
+        
+        double invdet = 1.0 / det;
+        
+        inv[0][0] = (m[1][1] * m[2][2] - m[2][1] * m[1][2]) * invdet;
+        inv[0][1] = (m[0][2] * m[2][1] - m[0][1] * m[2][2]) * invdet;
+        inv[0][2] = (m[0][1] * m[1][2] - m[0][2] * m[1][1]) * invdet;
+        
+        inv[1][0] = (m[1][2] * m[2][0] - m[1][0] * m[2][2]) * invdet;
+        inv[1][1] = (m[0][0] * m[2][2] - m[0][2] * m[2][0]) * invdet;
+        inv[1][2] = (m[1][0] * m[0][2] - m[0][0] * m[1][2]) * invdet;
+        
+        inv[2][0] = (m[1][0] * m[2][1] - m[2][0] * m[1][1]) * invdet;
+        inv[2][1] = (m[2][0] * m[0][1] - m[0][0] * m[2][1]) * invdet;
+        inv[2][2] = (m[0][0] * m[1][1] - m[1][0] * m[0][1]) * invdet;
+        
+        return true;
+    }
+
     void computeGradients(const Matrix2D& input, Matrix2D& Ix, Matrix2D& Iy) {
         Matrix2D kx(3, 3);
         kx.at(0,0)=-1; kx.at(0,1)=0; kx.at(0,2)=1;

@@ -57,10 +57,10 @@ private:
 
     // SIFT
     QSlider *siftSigmaSlider;
-    QSlider *siftScaleSlider;
+    QSlider *siftIntervalsSlider;
     QSlider *siftContrastSlider;
     QLabel *siftSigmaLabel;
-    QLabel *siftScaleLabel;
+    QLabel *siftIntervalsLabel;
     QLabel *siftContrastLabel;
 
     // Matcher

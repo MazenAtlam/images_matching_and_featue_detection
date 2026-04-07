@@ -19,7 +19,7 @@ namespace feature {
     };
 
     // Detects keypoints and extracts 128-d descriptors from a grayscale image matrix
-    std::vector<SiftKeypoint> extractSiftFeatures(const utils::Matrix2D& image, double initial_sigma, double scale_mult, double contrast_thresh);
+    std::vector<SiftKeypoint> extractSiftFeatures(const utils::Matrix2D& image, double initial_sigma, int num_intervals, double contrast_thresh);
 
     // Draws detected keypoints on top of the original QImage
     QImage drawSiftKeypoints(const QImage& originalImg, const std::vector<SiftKeypoint>& keypoints);

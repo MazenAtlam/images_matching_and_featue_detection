@@ -32,12 +32,15 @@ namespace utils {
     // Padding
     Matrix2D padMatrix(const Matrix2D& mat, int pad, double pad_val = 0.0);
 
-    // Convolutions
+    // Core Matrix structural functions
     Matrix2D convolve2D(const Matrix2D& input, const Matrix2D& kernel);
-
-    // Gaussian Blurring
-    Matrix2D getGaussianKernel(double sigma);
     Matrix2D applyGaussianBlur(const Matrix2D& input, double sigma);
+    Matrix2D QImageToGrayMatrix(const QImage& img);
+    
+    // Multi-scale image operations
+    Matrix2D upsampleByDouble(const Matrix2D& input);
+    Matrix2D subsampleByHalf(const Matrix2D& input);
+    bool invert3x3(const double mat[3][3], double inv[3][3]);
 
     // Gradients
     void computeGradients(const Matrix2D& input, Matrix2D& Ix, Matrix2D& Iy);

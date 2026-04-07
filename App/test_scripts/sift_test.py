@@ -47,14 +47,14 @@ class SIFTTestApp(QMainWindow):
         self.slider_sigma.valueChanged.connect(self.update_labels)
         sidebar.addWidget(self.slider_sigma)
         
-        # Scale Multiplier s slider
-        self.lbl_scale = QLabel("Scale Multiplier (s): 1.4")
-        sidebar.addWidget(self.lbl_scale)
-        self.slider_scale = QSlider(Qt.Orientation.Horizontal)
-        self.slider_scale.setRange(11, 20)
-        self.slider_scale.setValue(14)
-        self.slider_scale.valueChanged.connect(self.update_labels)
-        sidebar.addWidget(self.slider_scale)
+        # Intervals per Octave slider
+        self.lbl_intervals = QLabel("Intervals per Octave (s): 3")
+        sidebar.addWidget(self.lbl_intervals)
+        self.slider_intervals = QSlider(Qt.Orientation.Horizontal)
+        self.slider_intervals.setRange(1, 10)
+        self.slider_intervals.setValue(3)
+        self.slider_intervals.valueChanged.connect(self.update_labels)
+        sidebar.addWidget(self.slider_intervals)
         
         # Contrast Threshold slider
         self.lbl_contrast = QLabel("Contrast Threshold: 0.03")
@@ -108,7 +108,7 @@ class SIFTTestApp(QMainWindow):
             
     def update_labels(self):
         self.lbl_sigma.setText(f"Initial Sigma: {self.slider_sigma.value() / 10.0}")
-        self.lbl_scale.setText(f"Scale Multiplier (s): {self.slider_scale.value() / 10.0}")
+        self.lbl_intervals.setText(f"Intervals per Octave (s): {self.slider_intervals.value()}")
         self.lbl_contrast.setText(f"Contrast Threshold: {self.slider_contrast.value() / 100.0}")
             
     def apply_sift(self):
@@ -120,16 +120,12 @@ class SIFTTestApp(QMainWindow):
         start_time = time.time()
             
         sigma = self.slider_sigma.value() / 10.0
-        scale = self.slider_scale.value() / 10.0
+        num_intervals = self.slider_intervals.value()
         contrast = self.slider_contrast.value() / 100.0
         
-        # OpenCV defines scales by 'nOctaveLayers' instead of a pure scaling multiplier.
-        # Since standard SIFT formula is s_multiplier = 2^(1 / nOctaveLayers), we invert:
-        # nOctaveLayers = ln(2) / ln(s_multiplier)
-        n_octave_layers = 3 # OpenCV default (s = 1.2599)
-        if scale > 1.0:
-            n_octave_layers = int(np.round(np.log(2.0) / np.log(scale)))
-            n_octave_layers = max(1, n_octave_layers) # Must be at least 1
+        # Our C++ app now aligns perfectly with OpenCV's parameter methodology mathematically.
+        # We can map our input natively perfectly into nOctaveLayers.
+        n_octave_layers = num_intervals
             
         # Initialize OpenCV's built-in SIFT matching parameters
         sift = cv2.SIFT_create(
