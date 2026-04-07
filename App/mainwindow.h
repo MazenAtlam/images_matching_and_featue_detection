@@ -25,7 +25,10 @@ private slots:
     void uploadImageB();
     void applyHarris();
     void applySIFT();
-    void applyMatching();
+    void applyMatchingSSD();
+    void applyMatchingNCC();
+    
+    void executeMatching(const QString& metric);
     void logMessage(const QString& msg);
 
 private:
@@ -33,8 +36,7 @@ private:
     void setupUI();
     void setupSidebar(QWidget* sidebar);
     QGroupBox* createHarrisGroup();
-    QGroupBox* createSIFTGroup();
-    QGroupBox* createMatchingGroup();
+    QGroupBox* createSIFTMatcherGroup();
     void displayImage(QGraphicsScene* scene, const QImage& img);
     void showLoader(const QString& taskName);
 
@@ -62,8 +64,5 @@ private:
     QLabel *siftSigmaLabel;
     QLabel *siftIntervalsLabel;
     QLabel *siftContrastLabel;
-
-    // Matcher
-    QComboBox *matcherCombo;
 };
 #endif // MAINWINDOW_H

@@ -22,6 +22,7 @@ add_executable(FeatureDetectionApp
     harris.cpp
     harris.h
     sift.cpp
+    matching.cpp
     sift.h
     utils.cpp
     utils.h

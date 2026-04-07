@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "harris.h"
 #include "sift.h"
+#include "matching.h"
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QGridLayout>
@@ -27,17 +28,16 @@ void MainWindow::setupUI() {
 
     QHBoxLayout *mainLayout = new QHBoxLayout(centralWidget);
 
-    // Sidebar
+    // Sidebar explicitly fixed mathematically identically to bounds
     QWidget *sidebar = new QWidget(this);
-    sidebar->setFixedWidth(300);
+    sidebar->setFixedWidth(400);
     setupSidebar(sidebar);
 
-    // Main Content
+    // Main Content structured via tracking splitters matching the mockup precisely
     QSplitter *mainSplitter = new QSplitter(Qt::Vertical);
     
-    // Image Grid
-    QWidget *gridLayoutWidget = new QWidget();
-    QGridLayout *gridLayout = new QGridLayout(gridLayoutWidget);
+    // Top Half layout identically splitting Image A and Image B horizontally
+    QSplitter *topSplitter = new QSplitter(Qt::Horizontal);
     
     sceneA = new QGraphicsScene(this);
     sceneB = new QGraphicsScene(this);
@@ -47,23 +47,37 @@ void MainWindow::setupUI() {
     viewB = new QGraphicsView(sceneB);
     viewOutput = new QGraphicsView(sceneOutput);
     
-    gridLayout->addWidget(new QLabel("Input Image A"), 0, 0);
-    gridLayout->addWidget(viewA, 1, 0);
-    gridLayout->addWidget(new QLabel("Input Image B"), 0, 1);
-    gridLayout->addWidget(viewB, 1, 1);
-    gridLayout->addWidget(new QLabel("Output Result"), 0, 2);
-    gridLayout->addWidget(viewOutput, 1, 2);
+    QWidget *panelA = new QWidget();
+    QVBoxLayout *layoutA = new QVBoxLayout(panelA);
+    QLabel* lblA = new QLabel("Image A");
+    lblA->setAlignment(Qt::AlignCenter);
+    layoutA->addWidget(lblA);
+    layoutA->addWidget(viewA);
+    
+    QWidget *panelB = new QWidget();
+    QVBoxLayout *layoutB = new QVBoxLayout(panelB);
+    QLabel* lblB = new QLabel("Image B");
+    lblB->setAlignment(Qt::AlignCenter);
+    layoutB->addWidget(lblB);
+    layoutB->addWidget(viewB);
+    
+    topSplitter->addWidget(panelA);
+    topSplitter->addWidget(panelB);
+    topSplitter->setStretchFactor(0, 1);
+    topSplitter->setStretchFactor(1, 1);
 
-    // Terminal
-    terminal = new QTextEdit();
-    terminal->setReadOnly(true);
-    // Setting background to dark terminal like
-    terminal->setStyleSheet("background-color: black; color: #00FF00; font-family: Consolas;");
+    // Bottom Output Result linearly mapped below visually
+    QWidget *bottomPanel = new QWidget();
+    QVBoxLayout *bottomLayout = new QVBoxLayout(bottomPanel);
+    QLabel* lblOut = new QLabel("Output Result");
+    lblOut->setAlignment(Qt::AlignCenter);
+    bottomLayout->addWidget(lblOut);
+    bottomLayout->addWidget(viewOutput);
 
-    mainSplitter->addWidget(gridLayoutWidget);
-    mainSplitter->addWidget(terminal);
-    mainSplitter->setStretchFactor(0, 3);
-    mainSplitter->setStretchFactor(1, 1);
+    mainSplitter->addWidget(topSplitter);
+    mainSplitter->addWidget(bottomPanel);
+    mainSplitter->setStretchFactor(0, 5);
+    mainSplitter->setStretchFactor(1, 5);
 
     mainLayout->addWidget(sidebar);
     mainLayout->addWidget(mainSplitter);
@@ -82,12 +96,18 @@ void MainWindow::setupSidebar(QWidget* sidebar) {
 
     layout->addWidget(btnUploadA);
     layout->addWidget(btnUploadB);
-    layout->addSpacing(20);
+    layout->addSpacing(10);
 
     layout->addWidget(createHarrisGroup());
-    layout->addWidget(createSIFTGroup());
-    layout->addWidget(createMatchingGroup());
-    layout->addStretch();
+    layout->addWidget(createSIFTMatcherGroup());
+
+    // Placing Terminal specifically natively tracking inside the sidebar layout algebraically matching the mockup!
+    terminal = new QTextEdit();
+    terminal->setReadOnly(true);
+    // Setting background to tracking terminal matrix visually flawlessly
+    terminal->setStyleSheet("background-color: black; color: #00FF00; font-family: Consolas;");
+    
+    layout->addWidget(terminal, 1); // Native stretch 1
 }
 
 QGroupBox* MainWindow::createHarrisGroup() {
@@ -106,7 +126,7 @@ QGroupBox* MainWindow::createHarrisGroup() {
     harrisThresholdSlider->setValue(1000);
     connect(harrisThresholdSlider, &QSlider::valueChanged, [=](int v){ harrisThresholdLabel->setText(QString("Corner Threshold: %1").arg(v)); });
 
-    QPushButton *btnApply = new QPushButton("Apply Harris");
+    QPushButton *btnApply = new QPushButton("Apply Harris on Image A");
     connect(btnApply, &QPushButton::clicked, this, &MainWindow::applyHarris);
 
     layout->addWidget(harrisSigmaLabel);
@@ -118,8 +138,8 @@ QGroupBox* MainWindow::createHarrisGroup() {
     return group;
 }
 
-QGroupBox* MainWindow::createSIFTGroup() {
-    QGroupBox *group = new QGroupBox("SIFT Extractor");
+QGroupBox* MainWindow::createSIFTMatcherGroup() {
+    QGroupBox *group = new QGroupBox("SIFT Extractor and Feature Matcher");
     QVBoxLayout *layout = new QVBoxLayout(group);
 
     siftSigmaLabel = new QLabel("Initial Sigma: 1.6");
@@ -140,8 +160,14 @@ QGroupBox* MainWindow::createSIFTGroup() {
     siftContrastSlider->setValue(3);
     connect(siftContrastSlider, &QSlider::valueChanged, [=](int v){ siftContrastLabel->setText(QString("Contrast Threshold: %1").arg(v / 100.0)); });
 
-    QPushButton *btnApply = new QPushButton("Apply SIFT");
-    connect(btnApply, &QPushButton::clicked, this, &MainWindow::applySIFT);
+    QPushButton *btnApplySIFT = new QPushButton("Apply SIFT on Image A");
+    connect(btnApplySIFT, &QPushButton::clicked, this, &MainWindow::applySIFT);
+    
+    QPushButton *btnMatchSSD = new QPushButton("Match Features with SSD Metric");
+    connect(btnMatchSSD, &QPushButton::clicked, this, &MainWindow::applyMatchingSSD);
+    
+    QPushButton *btnMatchNCC = new QPushButton("Match Features with NCC Metric");
+    connect(btnMatchNCC, &QPushButton::clicked, this, &MainWindow::applyMatchingNCC);
 
     layout->addWidget(siftSigmaLabel);
     layout->addWidget(siftSigmaSlider);
@@ -149,26 +175,10 @@ QGroupBox* MainWindow::createSIFTGroup() {
     layout->addWidget(siftIntervalsSlider);
     layout->addWidget(siftContrastLabel);
     layout->addWidget(siftContrastSlider);
-    layout->addWidget(btnApply);
+    layout->addWidget(btnApplySIFT);
+    layout->addWidget(btnMatchSSD);
+    layout->addWidget(btnMatchNCC);
     
-    return group;
-}
-
-QGroupBox* MainWindow::createMatchingGroup() {
-    QGroupBox *group = new QGroupBox("Feature Matcher");
-    QVBoxLayout *layout = new QVBoxLayout(group);
-
-    matcherCombo = new QComboBox();
-    matcherCombo->addItem("SSD");
-    matcherCombo->addItem("NCC");
-
-    QPushButton *btnApply = new QPushButton("Match Features");
-    connect(btnApply, &QPushButton::clicked, this, &MainWindow::applyMatching);
-
-    layout->addWidget(new QLabel("Metric:"));
-    layout->addWidget(matcherCombo);
-    layout->addWidget(btnApply);
-
     return group;
 }
 
@@ -280,11 +290,50 @@ void MainWindow::applySIFT() {
     logMessage(QString("   Time taken: %1 ms").arg(elapsed));
 }
 
-void MainWindow::applyMatching() {
-    showLoader("Running Feature Matcher (Dummy)");
+void MainWindow::applyMatchingSSD() {
+    executeMatching("SSD");
+}
+
+void MainWindow::applyMatchingNCC() {
+    executeMatching("NCC");
+}
+
+void MainWindow::executeMatching(const QString& metric) {
+    if (imgA.isNull() || imgB.isNull()) {
+        logMessage("[Error] Please upload both Image A and Image B first.");
+        return;
+    }
+
+    showLoader("Running Feature Matcher");
     QElapsedTimer timer; timer.start();
-    // TODO: Connect to matching.cpp
-    logMessage(QString("   Time taken: %1 ms").arg(timer.elapsed()));
-    sceneOutput->clear();
-    sceneOutput->setBackgroundBrush(Qt::NoBrush);
+
+    double sigma0 = siftSigmaSlider->value() / 10.0;
+    int num_intervals = siftIntervalsSlider->value();
+    double contrast = siftContrastSlider->value() / 100.0;
+
+    utils::Matrix2D matA = utils::QImageToGrayMatrix(imgA);
+    utils::Matrix2D matB = utils::QImageToGrayMatrix(imgB);
+
+    logMessage("   Extracting features natively for Image A...");
+    std::vector<feature::SiftKeypoint> kpsA = feature::extractSiftFeatures(matA, sigma0, num_intervals, contrast);
+    
+    logMessage("   Extracting features natively for Image B...");
+    std::vector<feature::SiftKeypoint> kpsB = feature::extractSiftFeatures(matB, sigma0, num_intervals, contrast);
+
+    std::vector<feature::Match> matches;
+
+    if (metric == "SSD") {
+        logMessage("   Matching matrices via SSD (Ratio Test)...");
+        matches = feature::matchFeaturesSSD(kpsA, kpsB, 0.8);
+    } else {
+        logMessage("   Matching matrices via NCC (Dot Product)...");
+        matches = feature::matchFeaturesNCC(kpsA, kpsB, 0.85);
+    }
+
+    QImage resultImg = feature::drawMatches(imgA, imgB, kpsA, kpsB, matches);
+    displayImage(sceneOutput, resultImg);
+
+    int elapsed = timer.elapsed();
+    logMessage(QString("   Matched %1 features successfully!").arg(matches.size()));
+    logMessage(QString("   Time taken: %1 ms").arg(elapsed));
 }
