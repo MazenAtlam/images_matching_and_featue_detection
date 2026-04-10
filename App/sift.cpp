@@ -169,6 +169,7 @@ namespace feature {
                             double grad_y = (DoG[ck].data[(cy+1) * cols + cx] - DoG[ck].data[(cy-1) * cols + cx]) / 2.0;
                             double grad_s = (DoG[ck+1].data[cy * cols + cx] - DoG[ck-1].data[cy * cols + cx]) / 2.0;
                             
+                            // Outlier Rejection (Contrast and Edges)
                             double d_adjusted = v + 0.5 * (grad_x * dx_off + grad_y * dy_off + grad_s * ds_off);
                             
                             if (std::abs(d_adjusted) < actual_contrast_thresh) continue;
@@ -183,6 +184,7 @@ namespace feature {
 
                             if (det <= 0 || (tr * tr) / det >= edge_ratio) continue;
 
+                            // Orientation Assignment
                             double local_sigma = initial_sigma * std::pow(scale_mult, ck + ds_off);
                             double coord_mult = std::pow(2.0, octave - 1.0);
                             
@@ -226,6 +228,7 @@ namespace feature {
                             }
                             kp.orientation = max_bin * 10.0;
                             
+                            // 128-D Descriptor
                             kp.descriptor.resize(128, 0.0);
                             double cos_t = std::cos(kp.orientation * M_PI / 180.0);
                             double sin_t = std::sin(kp.orientation * M_PI / 180.0);
