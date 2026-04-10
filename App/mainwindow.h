@@ -78,5 +78,11 @@ private:
     QLabel *siftSigmaLabel;
     QLabel *siftIntervalsLabel;
     QLabel *siftContrastLabel;
+
+    // Matcher
+    QSlider *ssdThresholdSlider;
+    QLabel *ssdThresholdLabel;
+    QSlider *nccThresholdSlider;
+    QLabel *nccThresholdLabel;
 };
 #endif // MAINWINDOW_H

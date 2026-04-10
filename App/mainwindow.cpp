@@ -193,6 +193,18 @@ QGroupBox* MainWindow::createSIFTMatcherGroup() {
     siftContrastSlider->setValue(30);
     connect(siftContrastSlider, &QSlider::valueChanged, [=](int v){ siftContrastLabel->setText(QString("Contrast Threshold: %1").arg(v / 1000.0, 0, 'f', 3)); });
 
+    ssdThresholdLabel = new QLabel("SSD Ratio Threshold: 0.80");
+    ssdThresholdSlider = new QSlider(Qt::Horizontal);
+    ssdThresholdSlider->setRange(10, 100);
+    ssdThresholdSlider->setValue(80);
+    connect(ssdThresholdSlider, &QSlider::valueChanged, [=](int v){ ssdThresholdLabel->setText(QString("SSD Ratio Threshold: %1").arg(v / 100.0, 0, 'f', 2)); });
+
+    nccThresholdLabel = new QLabel("NCC Threshold: 0.85");
+    nccThresholdSlider = new QSlider(Qt::Horizontal);
+    nccThresholdSlider->setRange(10, 100);
+    nccThresholdSlider->setValue(85);
+    connect(nccThresholdSlider, &QSlider::valueChanged, [=](int v){ nccThresholdLabel->setText(QString("NCC Threshold: %1").arg(v / 100.0, 0, 'f', 2)); });
+
     QPushButton *btnApplySIFT = new QPushButton("Apply SIFT on Image A");
     connect(btnApplySIFT, &QPushButton::clicked, this, &MainWindow::applySIFT);
     
@@ -209,7 +221,13 @@ QGroupBox* MainWindow::createSIFTMatcherGroup() {
     layout->addWidget(siftContrastLabel);
     layout->addWidget(siftContrastSlider);
     layout->addWidget(btnApplySIFT);
+
+    layout->addWidget(ssdThresholdLabel);
+    layout->addWidget(ssdThresholdSlider);
     layout->addWidget(btnMatchSSD);
+
+    layout->addWidget(nccThresholdLabel);
+    layout->addWidget(nccThresholdSlider);
     layout->addWidget(btnMatchNCC);
     
     return group;
@@ -365,11 +383,13 @@ void MainWindow::executeMatching(const QString& metric) {
         std::vector<feature::Match> matches;
 
         if (metric == "SSD") {
+            double ssd_thresh = ssdThresholdSlider->value() / 100.0;
             logMessage("   Matching matrices via SSD (Ratio Test)...");
-            matches = feature::matchFeaturesSSD(kpsA, kpsB, 0.8);
+            matches = feature::matchFeaturesSSD(kpsA, kpsB, ssd_thresh);
         } else {
+            double ncc_thresh = nccThresholdSlider->value() / 100.0;
             logMessage("   Matching matrices via NCC (Dot Product)...");
-            matches = feature::matchFeaturesNCC(kpsA, kpsB, 0.85);
+            matches = feature::matchFeaturesNCC(kpsA, kpsB, ncc_thresh);
         }
 
         QImage resultImg = feature::drawMatches(imgA, imgB, kpsA, kpsB, matches);
