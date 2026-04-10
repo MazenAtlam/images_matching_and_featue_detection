@@ -43,7 +43,7 @@ namespace feature {
 
                 double trace = a_val + c_val;
                 // Using the requested formula: lambda2 = 1/2 [a+c - sqrt(b^2 + (a-c)^2)]
-                double lambda2 = 0.5 * (trace - std::sqrt(b_val * b_val + (a_val - c_val) * (a_val - c_val)));
+                double lambda2 = 0.5 * (trace - std::sqrt(4.0 * b_val * b_val + (a_val - c_val) * (a_val - c_val)));
                 lambda_minus.at(y, x) = lambda2;
             }
         }
