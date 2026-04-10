@@ -9,6 +9,7 @@
 #include <QSplitter>
 #include <QElapsedTimer>
 #include <QApplication>
+#include <QGraphicsPixmapItem>
 
 // Inject Spinner logic identically natively mimicking the specific loading aesthetic organically!
 SpinnerItem::SpinnerItem(QGraphicsItem *parent) : QGraphicsObject(parent), angle(0) {
@@ -148,13 +149,13 @@ QGroupBox* MainWindow::createHarrisGroup() {
 
     harrisSigmaLabel = new QLabel("Gaussian Sigma: 1.0");
     harrisSigmaSlider = new QSlider(Qt::Horizontal);
-    harrisSigmaSlider->setRange(1, 100);
+    harrisSigmaSlider->setRange(5, 50); // Maps reliably 0.5 to 5.0
     harrisSigmaSlider->setValue(10);
     connect(harrisSigmaSlider, &QSlider::valueChanged, [=](int v){ harrisSigmaLabel->setText(QString("Gaussian Sigma: %1").arg(v / 10.0)); });
 
     harrisThresholdLabel = new QLabel("Corner Threshold: 1000");
     harrisThresholdSlider = new QSlider(Qt::Horizontal);
-    harrisThresholdSlider->setRange(10, 50000);
+    harrisThresholdSlider->setRange(100, 100000); // Dynamically maps optimal linear determinant bounds
     harrisThresholdSlider->setValue(1000);
     connect(harrisThresholdSlider, &QSlider::valueChanged, [=](int v){ harrisThresholdLabel->setText(QString("Corner Threshold: %1").arg(v)); });
 
@@ -176,21 +177,21 @@ QGroupBox* MainWindow::createSIFTMatcherGroup() {
 
     siftSigmaLabel = new QLabel("Initial Sigma: 1.6");
     siftSigmaSlider = new QSlider(Qt::Horizontal);
-    siftSigmaSlider->setRange(1, 50);
+    siftSigmaSlider->setRange(5, 30); // Structurally bounds natively mapping 0.5 to 3.0 smoothly
     siftSigmaSlider->setValue(16);
     connect(siftSigmaSlider, &QSlider::valueChanged, [=](int v){ siftSigmaLabel->setText(QString("Initial Sigma: %1").arg(v / 10.0)); });
 
     siftIntervalsLabel = new QLabel("Intervals per Octave (s): 3");
     siftIntervalsSlider = new QSlider(Qt::Horizontal);
-    siftIntervalsSlider->setRange(1, 10);
+    siftIntervalsSlider->setRange(1, 6); // Optimal scaling bounds cleanly dynamically explicitly natively
     siftIntervalsSlider->setValue(3);
     connect(siftIntervalsSlider, &QSlider::valueChanged, [=](int v){ siftIntervalsLabel->setText(QString("Intervals per Octave (s): %1").arg(v)); });
 
-    siftContrastLabel = new QLabel("Contrast Threshold: 0.03");
+    siftContrastLabel = new QLabel("Contrast Threshold: 0.030");
     siftContrastSlider = new QSlider(Qt::Horizontal);
-    siftContrastSlider->setRange(1, 100);
-    siftContrastSlider->setValue(3);
-    connect(siftContrastSlider, &QSlider::valueChanged, [=](int v){ siftContrastLabel->setText(QString("Contrast Threshold: %1").arg(v / 100.0)); });
+    siftContrastSlider->setRange(5, 200); // Safely rigorously maps 0.005 to 0.200 (Default Lowe bounds 0.03) natively
+    siftContrastSlider->setValue(30);
+    connect(siftContrastSlider, &QSlider::valueChanged, [=](int v){ siftContrastLabel->setText(QString("Contrast Threshold: %1").arg(v / 1000.0, 0, 'f', 3)); });
 
     QPushButton *btnApplySIFT = new QPushButton("Apply SIFT on Image A");
     connect(btnApplySIFT, &QPushButton::clicked, this, &MainWindow::applySIFT);
@@ -317,7 +318,7 @@ void MainWindow::applySIFT() {
 
         double sigma0 = siftSigmaSlider->value() / 10.0;
         int num_intervals = siftIntervalsSlider->value();
-        double contrast = siftContrastSlider->value() / 100.0;
+        double contrast = siftContrastSlider->value() / 1000.0;
 
         utils::Matrix2D mat = utils::QImageToGrayMatrix(imgA);
         std::vector<feature::SiftKeypoint> kps = feature::extractSiftFeatures(mat, sigma0, num_intervals, contrast);
@@ -350,7 +351,7 @@ void MainWindow::executeMatching(const QString& metric) {
 
         double sigma0 = siftSigmaSlider->value() / 10.0;
         int num_intervals = siftIntervalsSlider->value();
-        double contrast = siftContrastSlider->value() / 100.0;
+        double contrast = siftContrastSlider->value() / 1000.0;
 
         utils::Matrix2D matA = utils::QImageToGrayMatrix(imgA);
         utils::Matrix2D matB = utils::QImageToGrayMatrix(imgB);
